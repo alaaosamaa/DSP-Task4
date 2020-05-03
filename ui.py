@@ -742,4 +742,5 @@ class Ui_MainWindow(object):
         self.song2.setBackground(background=None)
         self.mixedsong.setBackground(background=None)
         
+        
 from pyqtgraph import PlotWidget

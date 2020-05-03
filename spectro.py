@@ -41,8 +41,6 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             self.specto(self.Path2,2)
 
 
-
-
     def specto(self,path,Numb):
         print(path)
         wav = wave.open(path, 'r')
@@ -78,6 +76,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         combined.export(os.getcwd() +mixedFilename, format='wav')
         self.specto(os.getcwd() +mixedFilename,3)
         
+
 
 
 def main():
