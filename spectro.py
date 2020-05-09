@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
-import pylab
+from matplotlib import pylab
 from scipy import signal
 import os
 import sys
 import tkinter.messagebox
 import warnings
 import wave
+import numpy as np
 from scipy.io import wavfile
 from ui import Ui_MainWindow
 from pydub import AudioSegment
@@ -26,6 +27,7 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.Path1 = str
         self.Path2 = str
+        self.Path3 = str
         self.ui.browse1.clicked.connect(lambda: self.BROWSE(1))
         self.ui.browse2.clicked.connect(lambda: self.BROWSE(2))
         self.imgArr = []
@@ -62,7 +64,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             spectro2 = plt.specgram(soundData, Fs=frameRate)
             pylab.savefig('sepcto2.jpg', bbox_inches='tight')
             self.imgArr = cv2.imread('sepcto2.jpg')
-        img = pg.ImageItem(self.imgArr)
+        if (path == self.Path3):
+            spectro3 = plt.specgram(soundData, Fs=frameRate)
+            pylab.savefig('sepcto3.jpg', bbox_inches='tight')
+            self.imgArr = cv2.imread('sepcto3.jpg')
+            
+        img = pg.ImageItem(np.rot90(self.imgArr, 3))
         if Numb == 1:
             self.ui.song1.clear()
             self.ui.song1.addItem(img)
@@ -80,7 +87,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         combined = sound1.overlay(sound2)
         mixedFilename = '/mixing.wav'
         combined.export(os.getcwd() + mixedFilename, format = 'wav')
-        self.specto(os.getcwd() + mixedFilename,3)
+        self.Path3 = os.getcwd() + mixedFilename
+        self.specto(self.Path3,3)
         
 
 def main():
