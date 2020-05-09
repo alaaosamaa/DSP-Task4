@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt
-import pylab
+from matplotlib import pylab
+# import pylab 
 from scipy import signal
 import os
 import sys
@@ -11,6 +12,7 @@ from scipy.io import wavfile
 from ui import Ui_MainWindow
 from pydub import AudioSegment
 from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtWidgets import QInputDialog, QLineEdit, QFileDialog, QMessageBox
 from PyQt5.QtCore import QTime, QTimer
 import sys
 import cv2
@@ -63,76 +65,93 @@ warnings.simplefilter("ignore", DeprecationWarning)
 # plt.plot(vsf)
 # plt.show()
 
-
-
 class ApplicationWindow(QtWidgets.QMainWindow):
-        def __init__(self):
-                super(ApplicationWindow, self).__init__()
-                self.ui = Ui_MainWindow()
-                self.ui.setupUi(self)
-                self.Path1=str
-                self.Path2=str
-                self.ui.browse1.clicked.connect(lambda: self.BROWSE(1))
-                self.ui.browse2.clicked.connect(lambda: self.BROWSE(2))
+    def __init__(self):
+        super(ApplicationWindow, self).__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.Path1 = str
+        self.Path2 = str
+        self.Path3 = str
+        self.ui.browse1.clicked.connect(lambda: self.BROWSE(1))
+        self.ui.browse2.clicked.connect(lambda: self.BROWSE(2))
+        self.ui.Play.clicked.connect(self.playSong)
+        self.imgArr = []
 
 
-        def BROWSE(self,Number):
-                filepath, _ =QtWidgets.QFileDialog.getOpenFileName(None, 'Open File', '/home', "Image Files (*.wav *.,p3)")
-                if (Number==1):
-                        self.Path1 = filepath
-                        self.specto(self.Path1,1)
-                elif (Number==2):
-                        self.Path2 = filepath
-                        self.specto(self.Path2,2)
+    def BROWSE(self,Number):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        filepath, _ = QFileDialog.getOpenFileName(None, 'Browse Song', '', "Image Files (*.wav *.,p3)", options = options)
+        if (Number == 1):
+            self.Path1 = filepath
+            self.specto(self.Path1,1)
+        elif (Number == 2):
+            self.Path2 = filepath
+            self.specto(self.Path2,2)
 
-    
 
+    def specto(self,path,Numb):
+        # wav = wave.open(path, 'r')
+        # frames = wav.readframes(-1)
+        # soundData = pylab.fromstring(frames, 'Int16')
+        # frameRate = wav.getframerate()
+        # wav.close()
+        # soundData = soundData[0:60*frameRate]
 
-        def specto(self,path,Numb):
-                print(path)
-                wav = wave.open(path, 'r')
-                frames = wav.readframes(-1)
-                soundData = pylab.fromstring(frames, 'Int16')
-                frameRate = wav.getframerate()
-                wav.close()
-                soundData=soundData[0:60*frameRate]
-                plotting = pylab.subplot(111, frameon=False)
-                plotting.get_xaxis().set_visible(False)
-                plotting.get_yaxis().set_visible(False)
-                spectro= plt.specgram(soundData, Fs=frameRate)
-                pylab.savefig('sepcto.jpg', bbox_inches='tight')
+        plotting = plt.subplot(111, frameon = False)
+        plotting.get_xaxis().set_visible(False)
+        plotting.get_yaxis().set_visible(False)
+        
+        sample_rate, samples = wavfile.read(path)
+        samples=samples[0:60*sample_rate]
+        spectro, freqs, time, img = plt.specgram(samples, NFFT=None, Fs=sample_rate)
 
-                imgArr = cv2.imread('sepcto.jpg')
-                img = pg.ImageItem(imgArr)
-                if Numb==1:
-                        self.ui.song1.clear()
-                        self.ui.song1.addItem(img)
-                elif Numb==2:
-                        self.ui.song2.clear()
-                        self.ui.song2.addItem(img)
-                        self.mix()
-                elif Numb==3:
-                        self.ui.mixedsong.clear()
-                        self.ui.mixedsong.addItem(img)
+        if (path == self.Path1):
+            spectro1 = spectro
+            pylab.savefig('sepcto1.jpg', bbox_inches='tight')
+            self.imgArr = cv2.imread('sepcto1.jpg')
+        if (path == self.Path2):
+            spectro2 = spectro
+            pylab.savefig('sepcto2.jpg', bbox_inches='tight')
+            self.imgArr = cv2.imread('sepcto2.jpg')
+        if (path == self.Path3):
+            spectro3 = spectro
+            pylab.savefig('sepcto3.jpg', bbox_inches='tight')
+            self.imgArr = cv2.imread('sepcto3.jpg')
+        
+        img = pg.ImageItem(np.rot90(self.imgArr,3))
+        if Numb == 1:
+            self.ui.song1.clear()
+            self.ui.song1.addItem(img)
+        elif Numb == 2:
+            self.ui.song2.clear()
+            self.ui.song2.addItem(img)
+            self.mix()
+        elif Numb == 3:
+            self.ui.mixedsong.clear()
+            self.ui.mixedsong.addItem(img)
 
-        def mix(self):
+    def mix(self):
+        sound1 = AudioSegment.from_file(self.Path1)
+        sound2 = AudioSegment.from_file(self.Path2)
+        combined = sound1.overlay(sound2)
+        mixedFilename = '/mixing.wav'
+        combined.export(os.getcwd() + mixedFilename, format = 'wav')
+        self.Path3=os.getcwd() + mixedFilename
+        self.specto(self.Path3,3)
 
-                sound1 = AudioSegment.from_file(self.Path1)
-                sound2 = AudioSegment.from_file(self.Path2)
-                combined = sound1.overlay(sound2)
-                mixedFilename = '/mixing.wav'
-                combined.export(os.getcwd() +mixedFilename, format='wav')
-                self.specto(os.getcwd() +mixedFilename,3)
+    def playSong(self):
+        playsound("mixing.wav")
         
 
-
 def main():
-        app = QtWidgets.QApplication(sys.argv)
-        application = ApplicationWindow()
-        application.show()
-        app.exec_()
+    app = QtWidgets.QApplication(sys.argv)
+    application = ApplicationWindow()
+    application.show()
+    app.exec_()
 
 
 
 if __name__ == "__main__":
-        main()
+    main()
