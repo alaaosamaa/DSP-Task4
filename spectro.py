@@ -26,6 +26,8 @@ import matplotlib as mp
 from python_speech_features import mfcc
 import numpy as np
 from playsound import playsound
+from PIL import Image
+import imagehash
 
 
 warnings.simplefilter("ignore", DeprecationWarning)
@@ -145,8 +147,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def readSong(self, path):
         wav = wave.open(path, 'r')
         frames = wav.readframes(-1)
-        soundData = pylab.fromstring(frames, 'Int16')
         frameRate = wav.getframerate()
+        frames= frames[0:60*frameRate]
+        soundData = pylab.fromstring(frames, 'Int16')
         wav.close()
         return soundData
 
